@@ -69,7 +69,7 @@ int video_loop(string video_name, int frame_count, int frame_fps, int frame_widt
 
         imshow("Fragment", conv);
 
-        threshold(bin_image_gray, bin_image, first, second, THRESH_BINARY);
+        threshold(conv, bin_image, first, second, THRESH_BINARY);
         imshow("Bin Fragment", bin_image);
 
         trapeze(frame, res);
