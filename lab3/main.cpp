@@ -49,7 +49,7 @@ int main()
         imshow("Green", green_frame);
         imshow("Canny", canny_frame);
 
-        if (waitKey(5) >= 0)
+        if (waitKey(27) >= 0)
             break;
     }
     return 0;
