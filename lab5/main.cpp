@@ -85,8 +85,7 @@ int video_loop(string video_name, int frame_count, int frame_fps, int frame_widt
 
         imshow("Video", frame);
 
-        char c = (char)waitKey(1000/frame_fps);
-        if (c == 27) return 0;
+        waitKey(27);
     }
     cap.release();
     video_loop(video_name, frame_count, frame_fps, frame_width, frame_height);
