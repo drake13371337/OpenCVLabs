@@ -19,8 +19,8 @@ void filter_image(Mat in_image, Mat& out_image, int x, int y, std::vector<int> k
     for (auto& n : kern)
         kern_sum += abs(n);
 
-    for(int i=x; i<out_image.rows; i++){
-        for(int j=y; j<out_image.cols; j++){
+    for(int i=x+1; i<out_image.rows-1; i++){
+        for(int j=y+1; j<out_image.cols-1; j++){
             if(gray_type){
                 for(int ik=0; ik<kern_rows; ik++){
                     for(int jk=0; jk<kern_cols; jk++){
@@ -47,8 +47,8 @@ void filter_image(Mat in_image, Mat& out_image, int x, int y, std::vector<int> k
 int main()
 {
     Mat input_image = imread("image.jpg", IMREAD_COLOR);
-
     Mat gray_image;
+
     cvtColor(input_image, gray_image, COLOR_BGR2GRAY);
 
     Mat gauss_blur_image;
@@ -66,7 +66,6 @@ int main()
             0, 0, 0,
             -1, -2, -1};
     filter_image(gray_image, grad_filter_image, 0, 0, kern, 3, 1);
-
     imshow("Input image", input_image);
     imshow("GaussianBlur", gauss_blur_image);
     imshow("Custom filter", custom_filter_image);
