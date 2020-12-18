@@ -78,7 +78,7 @@ int video_loop(string video_name, int frame_count, int frame_fps, int frame_widt
         imshow("Video", frame);
 
         if (waitKey(27) >= 0)
-            break;
+            return 0;
     }
     cap.release();
     video_loop(video_name, frame_count, frame_fps, frame_width, frame_height);
@@ -116,6 +116,6 @@ int main()
     string video_name = "challenge.mp4";
 
     video_action(video_name);
-    
+
     return 0;
 }
