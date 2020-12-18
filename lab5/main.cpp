@@ -2,6 +2,7 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <set>
 
 #include <iostream>
 
@@ -30,20 +31,20 @@ vector<Point2f> trapeze(Mat& inp, vector<Point2f> res){
     return res;
 }
 
-vector<Point2f> custom_findPoints(Mat input, int k){
-    vector<Point2f> res;
+vector<Point> custom_findPoints(Mat input, int k){
+    vector<Point> res;
     for(int i=0;i<input.rows;i++){
         for(int j=0;j<input.cols;j++){
             if(!(input.at<uchar>(j, i)<k))
-                res.push_back(Point2f(j, i));
+                res.push_back(Point(j, i));
         }
     }
     return res;
 }
 
-vector<Point2f> eps_points(vector<Point2f> points, int eps){
-    vector<Point2f> next_points, sum_points;
-    vector<Point2f> cur_points(points);
+vector<Point> eps_points(vector<Point> points, int eps){
+    vector<Point> next_points, sum_points;
+    vector<Point> cur_points(points);
     long int xbuff, ybuff;
     int indexp = 0;
 
@@ -81,12 +82,12 @@ vector<Point2f> eps_points(vector<Point2f> points, int eps){
             }
             xbuff=xbuff/sum_points.size();
             ybuff=ybuff/sum_points.size();
-            next_points.insert(next_points.begin() ,Point2f(xbuff, ybuff));
+            next_points.insert(next_points.begin() ,Point(xbuff, ybuff));
             indexp++;
         }
 
         cur_points.clear();
-        for(Point2f a : next_points)
+        for(Point a : next_points)
             cur_points.push_back(a);
         next_points.clear();
         sum_points.clear();
@@ -94,9 +95,9 @@ vector<Point2f> eps_points(vector<Point2f> points, int eps){
     return points;
 }
 
-vector<Point2f> fix_points(vector<Point2f> points, int eps){
-    vector<Point2f> cur_points(points);
-    vector<Point2f> res, next_points;
+vector<Point> fix_points(vector<Point> points, int eps){
+    vector<Point> cur_points(points);
+    vector<Point> res, next_points;
     int a = 0;
     int b = 0;
 
@@ -118,108 +119,14 @@ vector<Point2f> fix_points(vector<Point2f> points, int eps){
             }
         }
     }
-    for(Point2f a : next_points){
+    for(Point a : next_points)
         res.push_back(a);
-    }
     return res;
 }
 
-vector<Point2f> l_points(vector<Point2f> input){
-    vector<Point2f> left;
-    for(Point2f a : input)
-        if(a.x<R_WIDTH/2)
-            left.push_back(a);
-    return left;
-}
-
-vector<Point2f> r_points(vector<Point2f> input){
-    vector<Point2f> right;
-    for(Point2f a : input)
-        if(a.x>R_WIDTH/2)
-            right.push_back(a);
-    return right;
-}
-
-bool cmp(Point2f first, Point2f second) {
-    return first.x < second.x;
-}
-
-vector<Point2f> approx(vector<Point2f> points, vector<float> ptr){
-    vector<Point2f> res;
-    const int size = points.size();
-    float x[size];
-    float y[size];
-    for(int i=0;i<size;++i){
-        x[i]=points[i].y;
-        y[i]=points[i].x;
-    }
-    float sum, tmp, tmp_val;
-    for(int i=0;i<size;i++)
-        for (int j=i;j>=1;j--)
-          if (x[j]<x[j-1]){
-              tmp=x[j-1];
-              x[j-1]=x[j];
-              x[j]=tmp;
-              tmp=y[j-1];
-              y[j-1]=y[j];
-              y[j]=tmp;
-          }
-
-    int cnt = 2;
-    float arrs[size][size], fr[size];
-    for(int i=0;i<cnt+1;i++)
-        for(int j=0;j<cnt+1; j++){
-            arrs[i][j]=0;
-            for (int k=0; k<size; k++)
-                arrs[i][j]+=pow(x[k], i+j);
-        }
-
-    for(int i=0;i<cnt+1;i++){
-        fr[i]=0;
-        for(int k=0;k<size;k++)
-            fr[i]+=pow(x[k],i)*y[k];
-    }
-    for(int k=0;k<cnt+1;k++)
-        for(int i=k+1;i<cnt+1;i++){
-            tmp_val=arrs[i][k]/arrs[k][k];
-            for(int j=k;j<cnt+1;j++)
-                arrs[i][j]-=tmp_val*arrs[k][j];
-            fr[i]-=tmp_val*fr[k];
-        }
-
-    vector<float> coeff(size);
-    for(int i=cnt;i>=0;i--){
-        sum = 0;
-        for(int j=i;j<cnt+1;j++)
-            sum+=arrs[i][j]*coeff[j];
-        coeff[i]=(fr[i]-sum)/arrs[i][i];
-    }
-
-    for(auto y=ptr.at(0); y<ptr.back(); y+=0.5){
-        float x = 0;
-        for(int r=0;r<(int)coeff.size();r++)
-            x+=coeff.at(r)*pow(y, r);
-        res.push_back(Point2f(x, y));
-    }
-    return res;
-}
-
-vector<float> gen_points(int a, int b, int space){
-    vector<float> res;
-    int buff = 0;
-    while(true){
-        res.push_back(a+buff);
-        buff+=space;
-        if((a+buff)>=b)
-            break;
-    }
-    res.push_back(b);
-    return res;
-}
-
-vector<Point2f> line_search(Mat input, int sRows, int sCols, int eps, int eps1, int color){
-    vector<Point2f> points, rect_points;
-    Point2f buff;
+vector<Point> line_search(Mat input, int sRows, int sCols, int eps, int eps1, int color){
+    vector<Point> points, rect_points;
+    Point buff;
     long int xbuff, ybuff;
     int xb = input.rows/sRows;
     int yb = input.cols/sCols;
@@ -261,29 +168,6 @@ vector<Point2f> line_search(Mat input, int sRows, int sCols, int eps, int eps1, 
     return eps_points(eps_points(fix_points(points, eps1), eps), eps);
 }
 
-vector<Point2f> trapeze_to_frame(vector<Point2f> points, int frame_width, int frame_height){
-    vector<Point2f> out1, res1, rtpoints;
-
-    out1.push_back(Point2f((int)(frame_width/2-top/2), (int)(frame_height/2-hight+bot)));
-    out1.push_back(Point2f((int)(frame_width/2+top/2), (int)(frame_height/2-hight+bot)));
-    out1.push_back(Point2f((int)(frame_width/2-base/2), (int)(frame_height/2+bot)));
-    out1.push_back(Point2f((int)(frame_width/2+base/2), (int)(frame_height/2+bot)));
-
-    res1.push_back(Point2f(0, 0));
-    res1.push_back(Point2f(R_WIDTH, 0));
-    res1.push_back(Point2f(0, R_HEIGHT));
-    res1.push_back(Point2f(R_WIDTH, R_HEIGHT));
-
-    Mat G = getPerspectiveTransform(res1, out1);
-    for(Point a : points){
-        rtpoints.push_back(Point2f( (a.x*G.at<double>(0, 0)+a.y*G.at<double>(0, 1)+G.at<double>(0, 2)) /
-                                    (a.x*G.at<double>(2, 0)+a.y*G.at<double>(2, 1)+G.at<double>(2, 2)),
-                                    (a.x*G.at<double>(1, 0)+a.y*G.at<double>(1, 1)+G.at<double>(1, 2)) /
-                                    (a.x*G.at<double>(2, 0)+a.y*G.at<double>(2, 1)+G.at<double>(2, 2)) ));
-    }
-    return rtpoints;
-}
-
 int video_loop(string video_name, int frame_count, int frame_fps, int frame_width, int frame_height){
     Mat frame, bin_image, gray_image, blur_image;
 
@@ -304,10 +188,9 @@ int video_loop(string video_name, int frame_count, int frame_fps, int frame_widt
             break;
         }
 
-        vector<Point2f> out, res, out1, res1, points, rpoints, lpoints, rline, lline, lstrline, lstlline;
-        vector<float> x;
+        vector<Point2f> out, res;
+        vector<Point> points;
 
-        //Frame -> Trapeze (frame -> conv)
         res.push_back(Point2f((int)(frame_width/2-top/2), (int)(frame_height/2-hight+bot)));
         res.push_back(Point2f((int)(frame_width/2+top/2), (int)(frame_height/2-hight+bot)));
         res.push_back(Point2f((int)(frame_width/2-base/2), (int)(frame_height/2+bot)));
@@ -321,53 +204,20 @@ int video_loop(string video_name, int frame_count, int frame_fps, int frame_widt
         Mat M = getPerspectiveTransform(res, out);
         warpPerspective(frame, conv, M, conv.size(), INTER_LINEAR, BORDER_CONSTANT);
 
-        //Image proc (conv)
+
         threshold(conv, bin_image, first, second, THRESH_BINARY);
         cvtColor(bin_image, gray_image, COLOR_BGR2GRAY);
         GaussianBlur(gray_image, blur_image, Size(11, 11), 1, 1);
 
-        //Line search (conv)
-        points = line_search(blur_image, 20, 20, 20, 30, 50);
 
-        //Draw cirlces (conv)
+        points = line_search(blur_image, 20, 20, 20, 40, 50);
+
         for(Point i : points){
             circle(conv, i, 5, Scalar(0, 0, 0), 3);
         }
-        //Trapeze(line points) -> Frame(points) (conv -> frame)
-        rpoints = trapeze_to_frame(r_points(points), frame_width, frame_height);
-        lpoints = trapeze_to_frame(l_points(points), frame_width, frame_height);
 
-        //Draw cirlces (frame)
-        /*for(Point i : rpoints){
-            circle(frame, i, 5, Scalar(0, 0, 0), 3);
-        }
-        for(Point i : lpoints){
-            circle(frame, i, 5, Scalar(0, 0, 0), 3);
-        }*/
-
-        //Draw line (frame)
-        x = gen_points(frame_height/2-hight+bot, frame_height/2+bot, 10);
-        sort(rpoints.begin(), rpoints.end(), cmp);
-        sort(lpoints.begin(), lpoints.end(), cmp);
-        
-        if(!rpoints.empty()){
-            rline = approx(rpoints, x);
-            lstrline = rline;
-        } else { rline = lstrline; }
-        if(!lpoints.empty()){
-            lline = approx(lpoints, x);
-            lstlline = lline;
-        } else { lline = lstlline; }
-
-        for(Point i : rline){
-            circle(frame, i, 5, Scalar(0, 255, 0), 3);
-        }
-        for(Point i : lline){
-            circle(frame, i, 5, Scalar(0, 255, 0), 3);
-        }
-
-        //Draw info (frame)
         trapeze(frame, res);
+
         msec+=1000/frame_fps;
         ++frame_num;
 
@@ -418,7 +268,8 @@ int video_action(string video_name){
     return 0;
 }
 
-int main(){
+int main()
+{
     string video_name = "challenge.mp4";
 
     video_action(video_name);
